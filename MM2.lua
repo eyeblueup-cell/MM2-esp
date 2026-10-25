@@ -4,6 +4,7 @@ local CoreGui = game:GetService("CoreGui")
 local Workspace = game:GetService("Workspace")
 local UserInputService = game:GetService("UserInputService")
 local Lighting = game:GetService("Lighting")
+local TeleportService = game:GetService("TeleportService")
 local Camera = Workspace.CurrentCamera
 
 local localPlayer = Players.LocalPlayer
@@ -13,7 +14,7 @@ local function purgeOldUIs()
     pcall(function()
         if CoreGui then
             for _, obj in ipairs(CoreGui:GetChildren()) do
-                if obj.Name == "MM2UltimateProSuite" then
+                if obj.Name == "MM2GodSuite" then
                     obj:Destroy()
                 end
             end
@@ -22,17 +23,17 @@ local function purgeOldUIs()
             local playerGui = localPlayer:FindFirstChild("PlayerGui")
             if playerGui then
                 for _, obj in ipairs(playerGui:GetChildren()) do
-                    if obj.Name == "MM2UltimateProSuite" then
+                    if obj.Name == "MM2GodSuite" then
                         obj:Destroy()
                     end
                 end
             end
         end
-        if _G.MM2ProGui and typeof(_G.MM2ProGui) == "Instance" then
-            _G.MM2ProGui:Destroy()
+        if _G.MM2GodGui and typeof(_G.MM2GodGui) == "Instance" then
+            _G.MM2GodGui:Destroy()
         end
     end)
-    _G.MM2ProGui = nil
+    _G.MM2GodGui = nil
 end
 
 purgeOldUIs()
@@ -40,10 +41,14 @@ purgeOldUIs()
 local CONFIG = {
     EspEnabled = true,
     GunEspEnabled = true,
+    NameEsp = true,
+    DistanceEsp = true,
     AlwaysOnTop = true,
     FillTransparency = 0.45,
     OutlineTransparency = 0.0,
-    AutoGrabGun = false,
+    AutoGrabGun = true,
+    AutoShootMurderer = false,
+    CoinFarmer = false,
     Fullbright = false,
     WalkSpeedEnabled = false,
     WalkSpeedValue = 24,
@@ -51,8 +56,9 @@ local CONFIG = {
     JumpPowerValue = 50,
     InfJump = false,
     Noclip = false,
+    Fly = false,
+    FlySpeed = 50,
     FovValue = 70,
-    AccentColor = Color3.fromRGB(220, 40, 60),
     Colors = {
         Murderer = { Fill = Color3.fromRGB(230, 40, 50), Outline = Color3.fromRGB(255, 100, 110) },
         Sheriff  = { Fill = Color3.fromRGB(30, 140, 255), Outline = Color3.fromRGB(90, 200, 255) },
@@ -64,7 +70,7 @@ local CONFIG = {
 }
 
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "MM2UltimateProSuite"
+screenGui.Name = "MM2GodSuite"
 screenGui.ResetOnSpawn = false
 pcall(function() protectGui(screenGui) end)
 
@@ -74,12 +80,12 @@ end)
 if not successParent then
     screenGui.Parent = localPlayer:WaitForChild("PlayerGui")
 end
-_G.MM2ProGui = screenGui
+_G.MM2GodGui = screenGui
 
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 520, 0, 380)
-mainFrame.Position = UDim2.new(0.5, -260, 0.5, -190)
-mainFrame.BackgroundColor3 = Color3.fromRGB(14, 14, 18)
+mainFrame.Size = UDim2.new(0, 560, 0, 420)
+mainFrame.Position = UDim2.new(0.5, -280, 0.5, -210)
+mainFrame.BackgroundColor3 = Color3.fromRGB(12, 12, 16)
 mainFrame.BorderSizePixel = 0
 mainFrame.ClipsDescendants = true
 mainFrame.Active = true
@@ -95,17 +101,17 @@ mainStroke.Parent = mainFrame
 
 local accentBar = Instance.new("Frame")
 accentBar.Size = UDim2.new(1, 0, 0, 3)
-accentBar.BackgroundColor3 = CONFIG.AccentColor
+accentBar.BackgroundColor3 = Color3.fromRGB(220, 40, 60)
 accentBar.BorderSizePixel = 0
 accentBar.Parent = mainFrame
 
 local titleLabel = Instance.new("TextLabel")
-titleLabel.Size = UDim2.new(0, 300, 0, 38)
+titleLabel.Size = UDim2.new(0, 350, 0, 38)
 titleLabel.Position = UDim2.new(0, 12, 0, 4)
 titleLabel.BackgroundTransparency = 1
-titleLabel.Text = "MM2 EXECUTIVE PRO SUITE"
+titleLabel.Text = "MM2 GOD SUITE v10.0 [ULTIMATE EDITION]"
 titleLabel.TextColor3 = Color3.fromRGB(240, 240, 250)
-titleLabel.TextSize = 12
+titleLabel.TextSize = 11
 titleLabel.Font = Enum.Font.GothamBold
 titleLabel.TextXAlignment = Enum.TextXAlignment.Left
 titleLabel.Parent = mainFrame
@@ -126,9 +132,9 @@ closeBtn.MouseButton1Click:Connect(function()
 end)
 
 local sidebar = Instance.new("Frame")
-sidebar.Size = UDim2.new(0, 130, 1, -44)
+sidebar.Size = UDim2.new(0, 140, 1, -44)
 sidebar.Position = UDim2.new(0, 0, 0, 44)
-sidebar.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
+sidebar.BackgroundColor3 = Color3.fromRGB(16, 16, 22)
 sidebar.BorderSizePixel = 0
 sidebar.Parent = mainFrame
 
@@ -144,13 +150,12 @@ sidebarPadding.PaddingRight = UDim.new(0, 8)
 sidebarPadding.Parent = sidebar
 
 local contentArea = Instance.new("Frame")
-contentArea.Size = UDim2.new(1, -135, 1, -44)
-contentArea.Position = UDim2.new(0, 135, 0, 44)
+contentArea.Size = UDim2.new(1, -145, 1, -44)
+contentArea.Position = UDim2.new(0, 145, 0, 44)
 contentArea.BackgroundTransparency = 1
 contentArea.Parent = mainFrame
 
 local tabs = {}
-local currentTabName = ""
 
 local function createTabContent(name)
     local sf = Instance.new("ScrollingFrame")
@@ -160,7 +165,7 @@ local function createTabContent(name)
     sf.BorderSizePixel = 0
     sf.Visible = false
     sf.ScrollBarThickness = 4
-    sf.CanvasSize = UDim2.new(0, 0, 2, 0)
+    sf.CanvasSize = UDim2.new(0, 0, 2.5, 0)
     sf.Parent = contentArea
 
     local layout = Instance.new("UIListLayout")
@@ -178,8 +183,8 @@ end
 
 local function createNavButton(name)
     local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(1, 0, 0, 34)
-    btn.BackgroundColor3 = Color3.fromRGB(24, 24, 32)
+    btn.Size = UDim2.new(1, 0, 0, 32)
+    btn.BackgroundColor3 = Color3.fromRGB(22, 22, 30)
     btn.Text = name
     btn.TextColor3 = Color3.fromRGB(180, 180, 200)
     btn.TextSize = 10
@@ -193,22 +198,24 @@ local function createNavButton(name)
         for _, t in pairs(tabs) do t.Visible = false end
         for _, b in ipairs(sidebar:GetChildren()) do
             if b:IsA("TextButton") then
-                b.BackgroundColor3 = Color3.fromRGB(24, 24, 32)
+                b.BackgroundColor3 = Color3.fromRGB(22, 22, 30)
                 b.TextColor3 = Color3.fromRGB(180, 180, 200)
             end
         end
         targetTab.Visible = true
         btn.BackgroundColor3 = Color3.fromRGB(45, 90, 180)
         btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-        currentTabName = name
     end)
 
     return targetTab
 end
 
-local espTab = createNavButton("ESP & VISUALS")
+local espTab = createTabContent("ESP & VISUALS")
+createNavButton("ESP & VISUALS")
+local combatTab = createNavButton("COMBAT & AIM")
 local teleTab = createNavButton("TELEPORTS & GUN")
-local moveTab = createNavButton("MOVEMENT & MISC")
+local moveTab = createNavButton("MOVEMENT")
+local miscTab = createNavButton("MISC & WORLD")
 local customTab = createNavButton("CUSTOMIZATION")
 
 tabs["ESP & VISUALS"].Visible = true
@@ -233,7 +240,7 @@ end
 
 local function addToggle(parent, text, defaultState, callback)
     local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(1, -6, 0, 32)
+    btn.Size = UDim2.new(1, -6, 0, 30)
     btn.BackgroundColor3 = defaultState and Color3.fromRGB(35, 140, 70) or Color3.fromRGB(160, 40, 40)
     btn.Text = text .. (defaultState and ": ON" or ": OFF")
     btn.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -269,7 +276,7 @@ end
 local function addSlider(parent, text, minVal, maxVal, defaultVal, callback)
     local frame = Instance.new("Frame")
     frame.Size = UDim2.new(1, -6, 0, 42)
-    frame.BackgroundColor3 = Color3.fromRGB(20, 20, 26)
+    frame.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
     frame.Parent = parent
     Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 6)
 
@@ -287,7 +294,7 @@ local function addSlider(parent, text, minVal, maxVal, defaultVal, callback)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(1, -12, 0, 12)
     btn.Position = UDim2.new(0, 6, 0, 24)
-    btn.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+    btn.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
     btn.Text = ""
     btn.Parent = frame
     Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
@@ -331,7 +338,7 @@ end
 local function addColorPicker(parent, roleName)
     local frame = Instance.new("Frame")
     frame.Size = UDim2.new(1, -6, 0, 32)
-    frame.BackgroundColor3 = Color3.fromRGB(20, 20, 26)
+    frame.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
     frame.Parent = parent
     Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 6)
 
@@ -386,14 +393,19 @@ local function addColorPicker(parent, roleName)
     end)
 end
 
-addHeader(espTab, "MAIN TOGGLES")
-addToggle(espTab, "PLAYER ESP", CONFIG.EspEnabled, function(s) CONFIG.EspEnabled = s end)
+addHeader(espTab, "ESP MODES")
+addToggle(espTab, "MASTER PLAYER ESP", CONFIG.EspEnabled, function(s) CONFIG.EspEnabled = s end)
 addToggle(espTab, "GUN DROP ESP", CONFIG.GunEspEnabled, function(s) CONFIG.GunEspEnabled = s end)
+addToggle(espTab, "NAME TAGS", CONFIG.NameEsp, function(s) CONFIG.NameEsp = s end)
+addToggle(espTab, "DISTANCE TAGS", CONFIG.DistanceEsp, function(s) CONFIG.DistanceEsp = s end)
 addToggle(espTab, "SEE THROUGH WALLS", CONFIG.AlwaysOnTop, function(s) CONFIG.AlwaysOnTop = s end)
 
-addHeader(espTab, "VISUAL ADJUSTMENTS")
+addHeader(espTab, "TRANSPARENCY SETTINGS")
 addSlider(espTab, "FILL TRANSPARENCY", 0, 1, CONFIG.FillTransparency, function(v) CONFIG.FillTransparency = v end)
 addSlider(espTab, "OUTLINE TRANSPARENCY", 0, 1, CONFIG.OutlineTransparency, function(v) CONFIG.OutlineTransparency = v end)
+
+addHeader(combatTab, "COMBAT AUTOMATION")
+addToggle(combatTab, "AUTO SHOOT MURDERER", CONFIG.AutoShootMurderer, function(s) CONFIG.AutoShootMurderer = s end)
 
 local function grabGunInstantly()
     local char = localPlayer.Character
@@ -413,7 +425,7 @@ local function grabGunInstantly()
         if targetPart then
             local originalCFrame = hrp.CFrame
             hrp.CFrame = targetPart.CFrame
-            task.wait(0.05)
+            task.wait(0.03)
             hrp.CFrame = originalCFrame
         end
     end
@@ -421,12 +433,12 @@ end
 
 addHeader(teleTab, "GUN ACTIONS")
 addButton(teleTab, "INSTANT GRAB GUN (TP & BACK)", grabGunInstantly)
-addToggle(teleTab, "AUTO GRAB GUN", CONFIG.AutoGrabGun, function(s) CONFIG.AutoGrabGun = s end)
+addToggle(teleTab, "AUTO GRAB GUN (INSTANT)", CONFIG.AutoGrabGun, function(s) CONFIG.AutoGrabGun = s end)
 
 addHeader(teleTab, "PLAYER TELEPORTS")
 local playerListFrame = Instance.new("Frame")
-playerListFrame.Size = UDim2.new(1, -6, 0, 200)
-playerListFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 26)
+playerListFrame.Size = UDim2.new(1, -6, 0, 220)
+playerListFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
 playerListFrame.Parent = teleTab
 Instance.new("UICorner", playerListFrame).CornerRadius = UDim.new(0, 6)
 
@@ -436,7 +448,7 @@ playerListScroll.Position = UDim2.new(0, 4, 0, 4)
 playerListScroll.BackgroundTransparency = 1
 playerListScroll.BorderSizePixel = 0
 playerListScroll.ScrollBarThickness = 4
-playerListScroll.CanvasSize = UDim2.new(0, 0, 2, 0)
+playerListScroll.CanvasSize = UDim2.new(0, 0, 2.5, 0)
 playerListScroll.Parent = playerListFrame
 
 local playerListLayout = Instance.new("UIListLayout")
@@ -444,22 +456,37 @@ playerListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 playerListLayout.Padding = UDim.new(0, 4)
 playerListLayout.Parent = playerListScroll
 
-addHeader(moveTab, "MOVEMENT MODIFIERS")
+addHeader(moveTab, "MOVEMENT CONTROLS")
 addToggle(moveTab, "WALKSPEED HACK", CONFIG.WalkSpeedEnabled, function(s) CONFIG.WalkSpeedEnabled = s end)
-addSlider(moveTab, "WALKSPEED VALUE", 16, 100, CONFIG.WalkSpeedValue, function(v) CONFIG.WalkSpeedValue = v end)
+addSlider(moveTab, "WALKSPEED VALUE", 16, 150, CONFIG.WalkSpeedValue, function(v) CONFIG.WalkSpeedValue = v end)
 addToggle(moveTab, "JUMPPOWER HACK", CONFIG.JumpPowerEnabled, function(s) CONFIG.JumpPowerEnabled = s end)
-addSlider(moveTab, "JUMPPOWER VALUE", 50, 300, CONFIG.JumpPowerValue, function(v) CONFIG.JumpPowerValue = v end)
+addSlider(moveTab, "JUMPPOWER VALUE", 50, 400, CONFIG.JumpPowerValue, function(v) CONFIG.JumpPowerValue = v end)
 addToggle(moveTab, "INFINITE JUMP", CONFIG.InfJump, function(s) CONFIG.InfJump = s end)
 addToggle(moveTab, "CHARACTER NOCLIP", CONFIG.Noclip, function(s) CONFIG.Noclip = s end)
 
-addHeader(moveTab, "WORLD & CAMERA")
-addToggle(moveTab, "FULLBRIGHT LIGHTING", CONFIG.Fullbright, function(s) CONFIG.Fullbright = s end)
-addSlider(moveTab, "FIELD OF VIEW (FOV)", 50, 120, CONFIG.FovValue, function(v)
+addHeader(miscTab, "AUTOMATION & WORLD")
+addToggle(miscTab, "AUTO COIN FARMER", CONFIG.CoinFarmer, function(s) CONFIG.CoinFarmer = s end)
+addToggle(miscTab, "FULLBRIGHT LIGHTING", CONFIG.Fullbright, function(s) CONFIG.Fullbright = s end)
+addSlider(miscTab, "FIELD OF VIEW (FOV)", 50, 130, CONFIG.FovValue, function(v)
     CONFIG.FovValue = v
     Camera.FieldOfView = v
 end)
 
-addHeader(customTab, "ROLE COLORS")
+addHeader(miscTab, "SERVER UTILITIES")
+addButton(miscTab, "REJOIN SERVER", function()
+    TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, localPlayer)
+end)
+addButton(miscTab, "SERVER HOP", function()
+    local servers = game:GetService("HttpService"):JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/"..game.PlaceId.."/servers/Public?sortOrder=Asc&limit=100"))
+    for _, s in ipairs(servers.data) do
+        if s.playing < s.maxPlayers and s.id ~= game.JobId then
+            TeleportService:TeleportToPlaceInstance(game.PlaceId, s.id, localPlayer)
+            break
+        end
+    end
+end)
+
+addHeader(customTab, "ROLE COLOR CUSTOMIZER")
 addColorPicker(customTab, "Murderer")
 addColorPicker(customTab, "Sheriff")
 addColorPicker(customTab, "Friend")
@@ -482,7 +509,7 @@ local playerEntries = {}
 
 task.spawn(function()
     while true do
-        task.wait(0.3)
+        task.wait(0.2)
         if CONFIG.AutoGrabGun then
             pcall(function()
                 local char = localPlayer.Character
@@ -494,9 +521,59 @@ task.spawn(function()
                             if targetPart then
                                 local orig = hrp.CFrame
                                 hrp.CFrame = targetPart.CFrame
-                                task.wait(0.03)
+                                task.wait(0.02)
                                 hrp.CFrame = orig
                                 break
+                            end
+                        end
+                    end
+                end
+            end)
+        end
+        if CONFIG.CoinFarmer then
+            pcall(function()
+                local char = localPlayer.Character
+                local hrp = char and char:FindFirstChild("HumanoidRootPart")
+                if hrp then
+                    for _, obj in ipairs(Workspace:GetDescendants()) do
+                        if obj.Name == "CoinContainer" or obj.Name == "Coin" or obj.Name:lower():find("coin") then
+                            local part = obj:IsA("BasePart") and obj or obj:FindFirstChildWhichIsA("BasePart")
+                            if part then
+                                hrp.CFrame = part.CFrame
+                                task.wait(0.1)
+                                break
+                            end
+                        end
+                    end
+                end
+            end)
+        end
+    end
+end)
+
+task.spawn(function()
+    while true do
+        task.wait(0.1)
+        if CONFIG.AutoShootMurderer then
+            pcall(function()
+                local char = localPlayer.Character
+                local bp = localPlayer:FindFirstChild("Backpack")
+                local gun = (char and (char:FindFirstChild("Gun") or char:FindFirstChild("Revolver"))) or (bp and (bp:FindFirstChild("Gun") or bp:FindFirstChild("Revolver")))
+                if gun then
+                    if gun.Parent == bp then
+                        gun.Parent = char
+                    end
+                    for _, plr in ipairs(Players:GetPlayers()) do
+                        if plr ~= localPlayer then
+                            local pchar = Workspace:FindFirstChild(plr.Name)
+                            local pbp = plr:FindFirstChild("Backpack")
+                            if pchar and ((pchar:FindFirstChild("Knife") or pchar:FindFirstChild("Blade")) or (pbp and (pbp:FindFirstChild("Knife") or pbp:FindFirstChild("Blade")))) then
+                                local targetHrp = pchar:FindFirstChild("HumanoidRootPart")
+                                local myHrp = char and char:FindFirstChild("HumanoidRootPart")
+                                if targetHrp and myHrp then
+                                    gun:Activate()
+                                    gun.GripPos = Vector3.new(0, 0, 0)
+                                end
                             end
                         end
                     end
@@ -540,6 +617,8 @@ RunService.RenderStepped:Connect(function()
             local pchar = Workspace:FindFirstChild(plr.Name)
 
             local highlight = pchar and pchar:FindFirstChild("PlayerESP")
+            local billboard = pchar and pchar:FindFirstChild("PlayerESP_Text")
+
             if CONFIG.EspEnabled and pchar then
                 if not highlight then
                     highlight = Instance.new("Highlight")
@@ -553,8 +632,44 @@ RunService.RenderStepped:Connect(function()
                 highlight.OutlineColor = palette.Outline
                 highlight.FillTransparency = CONFIG.FillTransparency
                 highlight.OutlineTransparency = CONFIG.OutlineTransparency
-            elseif highlight then
-                highlight:Destroy()
+
+                if CONFIG.NameEsp or CONFIG.DistanceEsp then
+                    if not billboard then
+                        billboard = Instance.new("BillboardGui")
+                        billboard.Name = "PlayerESP_Text"
+                        billboard.Size = UDim2.new(0, 200, 0, 50)
+                        billboard.StudsOffset = Vector3.new(0, 3, 0)
+                        billboard.AlwaysOnTop = true
+                        billboard.Parent = pchar
+
+                        local textLbl = Instance.new("TextLabel")
+                        textLbl.Name = "Info"
+                        textLbl.Size = UDim2.new(1, 0, 1, 0)
+                        textLbl.BackgroundTransparency = 1
+                        textLbl.TextSize = 11
+                        textLbl.Font = Enum.Font.GothamBold
+                        textLbl.TextColor3 = Color3.fromRGB(255, 255, 255)
+                        textLbl.TextStrokeTransparency = 0
+                        textLbl.Parent = billboard
+                    end
+                    billboard.Adornee = pchar:FindFirstChild("Head") or pchar.PrimaryPart
+                    local infoText = ""
+                    if CONFIG.NameEsp then infoText = infoText .. plr.Name .. " [" .. role .. "]\n" end
+                    if CONFIG.DistanceEsp then
+                        local myHrp = char and char:FindFirstChild("HumanoidRootPart")
+                        local targetHrp = pchar:FindFirstChild("HumanoidRootPart")
+                        if myHrp and targetHrp then
+                            local dist = math.floor((myHrp.Position - targetHrp.Position).Magnitude)
+                            infoText = infoText .. dist .. " studs"
+                        end
+                    end
+                    billboard.Info.Text = infoText
+                elseif billboard then
+                    billboard:Destroy()
+                end
+            else
+                if highlight then highlight:Destroy() end
+                if billboard then billboard:Destroy() end
             end
 
             local entry = playerEntries[plr]
@@ -562,7 +677,7 @@ RunService.RenderStepped:Connect(function()
                 entry = {}
                 entry.Frame = Instance.new("Frame")
                 entry.Frame.Size = UDim2.new(1, 0, 0, 28)
-                entry.Frame.BackgroundColor3 = Color3.fromRGB(28, 28, 36)
+                entry.Frame.BackgroundColor3 = Color3.fromRGB(24, 24, 32)
                 entry.Frame.Parent = playerListScroll
                 Instance.new("UICorner", entry.Frame).CornerRadius = UDim.new(0, 4)
 
@@ -589,7 +704,7 @@ RunService.RenderStepped:Connect(function()
 
                 entry.TpBtn.MouseButton1Click:Connect(function()
                     local myHrp = localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart")
-                    local targetHrp = plr.Character and plr.Character:FindFirstChild("HumanoidRootPart")
+                    local targetHrp = pchar and pchar:FindFirstChild("HumanoidRootPart")
                     if myHrp and targetHrp then
                         myHrp.CFrame = targetHrp.CFrame * CFrame.new(0, 0, 3)
                     end
